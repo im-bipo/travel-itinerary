@@ -59,7 +59,7 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   /* primary brand color updated to blue */
-  --primary: #0F4272;
+  --primary: #0f4272;
   /* ensure readable text on blue background */
   --primary-foreground: #ffffff;
   --secondary: oklch(0.55 0.15 220);
@@ -72,7 +72,7 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   /* ring matches primary blue */
-  --ring: #0F4272;
+  --ring: #0f4272;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -96,7 +96,7 @@
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
   /* dark mode primary stays blue with light text */
-  --primary: #0F4272;
+  --primary: #0f4272;
   --primary-foreground: #ffffff;
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
