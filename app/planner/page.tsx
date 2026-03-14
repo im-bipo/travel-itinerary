@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useRef, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Compass,
   Loader2,
@@ -13,6 +14,7 @@ import ReactMarkdown from "react-markdown";
 import { chatReply, ChatMessage as AIChatMessage } from "@/actions/chat";
 import type { PlaceResult } from "@/actions/search";
 import { getPlacesByIds, PlaceDetail } from "@/actions/getPlacesByIds";
+import { useSelectedPlaces } from "@/app/context/SelectedPlacesContext";
 
 type ChatMessage = {
   id: number;
@@ -36,7 +38,12 @@ export default function PlannerPage() {
   const [placeDetails, setPlaceDetails] = useState<Map<number, PlaceDetail>>(
     new Map(),
   );
-  const [selectedPlaces, setSelectedPlaces] = useState<PlaceResult[]>([]);
+  const {
+    selectedPlaces,
+    addPlace,
+    removePlace,
+  } = useSelectedPlaces();
+  const router = useRouter();
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -130,15 +137,6 @@ export default function PlannerPage() {
     submitMessage(input);
   }
 
-  function addPlace(place: PlaceResult) {
-    setSelectedPlaces((prev) =>
-      prev.some((p) => p.place_id === place.place_id) ? prev : [...prev, place],
-    );
-  }
-
-  function removePlace(placeId: number) {
-    setSelectedPlaces((prev) => prev.filter((p) => p.place_id !== placeId));
-  }
 
   return (
     <main className="relative h-[calc(100vh-4rem)] overflow-hidden bg-[linear-gradient(120deg,rgba(0,128,62,0.06),rgba(255,255,255,1),rgba(0,128,62,0.04))]">
@@ -369,7 +367,14 @@ export default function PlannerPage() {
             </div>
 
             <div className="shrink-0 border-t border-primary/10 bg-primary/5 px-4 py-4">
-              <button className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90">
+              <button
+                type="button"
+                disabled={selectedPlaces.length === 0}
+                onClick={() => {
+                  router.push("/route");
+                }}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 <Route className="h-4 w-4" />
                 Generate Route Plan
               </button>
