@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Background,
   Controls,
@@ -16,6 +16,7 @@ import type {
   GraphPoint,
   RouteOption,
 } from "@/app/route/components/types";
+import { GitBranchPlusIcon, Table, Trash2 } from "lucide-react";
 
 type RouteGraphProps = {
   places: PlaceDetail[];
@@ -27,6 +28,7 @@ type RouteGraphProps = {
   roadDistances: Array<Array<number | null>>;
   roadDistanceError: string;
   roadDistanceLoading: boolean;
+  onDeletePlace: (placeId: number) => void;
 };
 
 export default function RouteGraph({
@@ -39,7 +41,24 @@ export default function RouteGraph({
   roadDistances,
   roadDistanceError,
   roadDistanceLoading,
+  onDeletePlace,
 }: RouteGraphProps) {
+  const [activeTab, setActiveTab] = useState<"graph" | "table">("graph");
+
+  const getPlaceIdFromPointId = (pointId: string): number | null => {
+    if (!pointId.startsWith("place-")) return null;
+    const id = Number(pointId.replace("place-", ""));
+    return Number.isFinite(id) ? id : null;
+  };
+
+  const handleDeletePlace = (placeId: number, label: string) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${label}" from this route?`,
+    );
+    if (!confirmed) return;
+    onDeletePlace(placeId);
+  };
+
   const optionToNodeId = (value: number | null): string | null => {
     if (value == null) return null;
     if (value === -1) return "airport";
@@ -124,12 +143,35 @@ export default function RouteGraph({
         padding + ((point.lon - minLon) / spanLon) * (width - padding * 2);
       const y =
         padding + (1 - (point.lat - minLat) / spanLat) * (height - padding * 2);
+      const placeId = getPlaceIdFromPointId(point.id);
 
       return {
         id: point.id,
         position: { x, y },
         draggable: false,
-        data: { label: point.label },
+        className: "group",
+        data: {
+          label: (
+            <div className="flex w-full items-center justify-between">
+              <span className="mr-2 flex-1 text-left">{point.label}</span>
+              {point.kind === "place" && placeId != null ? (
+                <button
+                  type="button"
+                  aria-label={`Delete ${point.label}`}
+                  title="Delete place"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    handleDeletePlace(placeId, point.label);
+                  }}
+                  className="opacity-0 transition-opacity group-hover:opacity-100 rounded-md border border-red-200 bg-white p-1 text-red-600 hover:bg-red-50 cursor-pointer"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              ) : null}
+            </div>
+          ),
+        },
         style: {
           background:
             point.kind === "airport"
@@ -217,13 +259,43 @@ export default function RouteGraph({
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900">
-        Network Graph (React Flow)
-      </h2>
-      <p className="mt-2 text-sm text-slate-600">
-        All places are connected to each other with weighted edges from OSRM
-        road-network distance. The selected route is highlighted in green.
-      </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">
+            OSRM road distances
+            {activeTab === "graph" ? " - Network Graph" : " - Distance Table"}
+          </h2>
+          <p className="mt-2 text-sm text-slate-600">
+            {activeTab === "graph"
+              ? "All places are connected to each other with weighted edges from OSRM road-network distance. The selected route is highlighted in green."
+              : "Distance matrix showing road distances (in km) between all places."}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab("graph")}
+            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors flex gap-2 cursor-pointer ${
+              activeTab === "graph"
+                ? "bg-slate-900 text-white"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            <GitBranchPlusIcon className="h-4 w-4" />
+            Graph
+          </button>
+          <button
+            onClick={() => setActiveTab("table")}
+            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors flex gap-2 cursor-pointer ${
+              activeTab === "table"
+                ? "bg-slate-900 text-white"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            <Table className="h-4 w-4" />
+            Table
+          </button>
+        </div>
+      </div>
       {roadDistanceLoading ? (
         <p className="mt-2 text-xs text-slate-500">
           Fetching OSRM road distances...
@@ -232,28 +304,137 @@ export default function RouteGraph({
       {roadDistanceError ? (
         <p className="mt-2 text-xs text-red-600">{roadDistanceError}</p>
       ) : null}
-      <div className="mt-4 h-[460px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-        {graphNodes.length >= 2 ? (
-          <ReactFlow
-            nodes={graphNodes}
-            edges={graphEdges}
-            fitView
-            fitViewOptions={{ padding: 0.2 }}
-            defaultEdgeOptions={{ animated: false }}
-            nodesDraggable={false}
-            nodesConnectable={false}
-            elementsSelectable
-            proOptions={{ hideAttribution: true }}
-          >
-            <Background color="#cbd5e1" gap={18} />
-            <Controls showInteractive={false} />
-          </ReactFlow>
-        ) : (
-          <div className="flex h-full items-center justify-center text-sm text-slate-500">
-            At least two places with coordinates are needed to render the graph.
-          </div>
-        )}
-      </div>
+
+      {activeTab === "graph" ? (
+        <div className="mt-4 h-[460px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+          {graphNodes.length >= 2 ? (
+            <ReactFlow
+              nodes={graphNodes}
+              edges={graphEdges}
+              fitView
+              fitViewOptions={{ padding: 0.2 }}
+              defaultEdgeOptions={{ animated: false }}
+              nodesDraggable={false}
+              nodesConnectable={false}
+              elementsSelectable
+              proOptions={{ hideAttribution: true }}
+            >
+              <Background color="#cbd5e1" gap={18} />
+              <Controls showInteractive={false} />
+            </ReactFlow>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-slate-500">
+              At least two places with coordinates are needed to render the
+              graph.
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 overflow-x-auto">
+          {graphPoints.length === 0 ? (
+            <div className="flex h-40 items-center justify-center text-sm text-slate-500">
+              No places to display.
+            </div>
+          ) : roadDistances.length === 0 ? (
+            <div className="flex h-40 items-center justify-center text-sm text-slate-500">
+              Waiting for distance data...
+            </div>
+          ) : (
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr>
+                  <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-left font-semibold text-slate-700">
+                    From / To
+                  </th>
+                  {graphPoints.map((point) => (
+                    <th
+                      key={point.id}
+                      className="border border-slate-300 bg-slate-100 px-3 py-2 text-center font-semibold text-slate-700 whitespace-nowrap"
+                    >
+                      <div className="group flex w-full items-center justify-between gap-3">
+                        <span className="flex-1 text-left">{point.label}</span>
+                        {point.kind === "place" ? (
+                          <button
+                            type="button"
+                            aria-label={`Delete ${point.label}`}
+                            title="Delete place"
+                            onClick={() => {
+                              const placeId = getPlaceIdFromPointId(point.id);
+                              if (placeId == null) return;
+                              handleDeletePlace(placeId, point.label);
+                            }}
+                            className="opacity-0 transition-opacity group-hover:opacity-100 rounded-md border border-red-200 bg-white p-1 text-red-600 hover:bg-red-50 cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        ) : null}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {graphPoints.map((fromPoint, fromIdx) => (
+                  <tr key={fromPoint.id}>
+                    <td className="border border-slate-300 bg-slate-50 px-3 py-2 font-medium text-slate-900 whitespace-nowrap">
+                      <div className="group flex w-full items-center justify-between gap-3">
+                        <span className="flex-1 text-left">
+                          {fromPoint.label}
+                        </span>
+                        {fromPoint.kind === "place" ? (
+                          <button
+                            type="button"
+                            aria-label={`Delete ${fromPoint.label}`}
+                            title="Delete place"
+                            onClick={() => {
+                              const placeId = getPlaceIdFromPointId(
+                                fromPoint.id,
+                              );
+                              if (placeId == null) return;
+                              handleDeletePlace(placeId, fromPoint.label);
+                            }}
+                            className="opacity-0 transition-opacity group-hover:opacity-100 rounded-md border border-red-200 bg-white p-1 text-red-600 hover:bg-red-50 cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
+                    {graphPoints.map((toPoint, toIdx) => {
+                      const distanceMeters =
+                        roadDistances[fromIdx]?.[toIdx] ?? null;
+                      const distanceKm =
+                        distanceMeters != null
+                          ? (distanceMeters / 1000).toFixed(1)
+                          : null;
+                      const isZero = fromIdx === toIdx;
+
+                      return (
+                        <td
+                          key={`${fromPoint.id}--${toPoint.id}`}
+                          className={`border border-slate-300 px-3 py-2 text-center ${
+                            isZero
+                              ? "bg-slate-100 text-slate-500"
+                              : distanceKm === null
+                                ? "bg-red-50 text-red-600"
+                                : "bg-white text-slate-700"
+                          }`}
+                        >
+                          {isZero
+                            ? "—"
+                            : distanceKm
+                              ? `${distanceKm}`
+                              : "No path"}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
     </div>
   );
 }

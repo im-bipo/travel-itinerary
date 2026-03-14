@@ -14,7 +14,7 @@ import {
 } from "@/lib/branch-and-bound";
 
 export default function RoutePage() {
-  const { selectedPlaces } = useSelectedPlaces();
+  const { selectedPlaces, removePlace } = useSelectedPlaces();
   const selectedIds = useMemo(
     () => selectedPlaces.map((p) => p.place_id),
     [selectedPlaces],
@@ -481,6 +481,11 @@ export default function RoutePage() {
               roadDistances={roadDistances}
               roadDistanceLoading={roadDistanceLoading}
               roadDistanceError={roadDistanceError}
+              onDeletePlace={(placeId) => {
+                removePlace(placeId);
+                setStartId((prev) => (prev === placeId ? null : prev));
+                setEndId((prev) => (prev === placeId ? null : prev));
+              }}
             />
 
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
