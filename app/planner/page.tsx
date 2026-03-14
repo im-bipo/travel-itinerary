@@ -38,11 +38,7 @@ export default function PlannerPage() {
   const [placeDetails, setPlaceDetails] = useState<Map<number, PlaceDetail>>(
     new Map(),
   );
-  const {
-    selectedPlaces,
-    addPlace,
-    removePlace,
-  } = useSelectedPlaces();
+  const { selectedPlaces, addPlace, removePlace } = useSelectedPlaces();
   const router = useRouter();
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -136,7 +132,6 @@ export default function PlannerPage() {
     event.preventDefault();
     submitMessage(input);
   }
-
 
   return (
     <main className="relative h-[calc(100vh-4rem)] overflow-hidden bg-[linear-gradient(120deg,rgba(0,128,62,0.06),rgba(255,255,255,1),rgba(0,128,62,0.04))]">

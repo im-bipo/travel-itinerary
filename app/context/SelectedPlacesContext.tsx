@@ -26,7 +26,9 @@ export function SelectedPlacesProvider({
       selectedPlaces,
       addPlace: (place: PlaceResult) => {
         setSelectedPlaces((prev) =>
-          prev.some((p) => p.place_id === place.place_id) ? prev : [...prev, place],
+          prev.some((p) => p.place_id === place.place_id)
+            ? prev
+            : [...prev, place],
         );
       },
       removePlace: (placeId: number) => {

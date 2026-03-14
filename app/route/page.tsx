@@ -29,7 +29,9 @@ export default function RoutePage() {
         const details = await getPlacesByIds(selectedIds);
         setPlaceDetails(details);
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Failed to load place details.");
+        setError(
+          err instanceof Error ? err.message : "Failed to load place details.",
+        );
       } finally {
         setLoading(false);
       }
@@ -86,7 +88,8 @@ export default function RoutePage() {
                 <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
                   {place.latitude != null && place.longitude != null ? (
                     <span>
-                      Lat: {place.latitude.toFixed(6)}, Lon: {place.longitude.toFixed(6)}
+                      Lat: {place.latitude.toFixed(6)}, Lon:{" "}
+                      {place.longitude.toFixed(6)}
                     </span>
                   ) : (
                     <span>No coordinates</span>
