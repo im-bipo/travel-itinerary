@@ -1,16 +1,25 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useSelectedPlaces } from "@/app/context/SelectedPlacesContext";
 import { getPlacesByIds, PlaceDetail } from "@/actions/getPlacesByIds";
 import RouteSelectors from "@/app/route/components/RouteSelectors";
 import RouteGraph from "@/app/route/components/RouteGraph";
 import BranchAndBoundSection from "@/app/route/components/BranchAndBoundSection";
+import type { RouteFlowMapPoint } from "@/app/route/components/RouteFlowMap";
 import type { GraphPoint, RouteOption } from "@/app/route/components/types";
 import {
   solveRouteWithBranchAndBound,
   type BranchAndBoundResult,
 } from "@/lib/branch-and-bound";
+
+const RouteFlowMap = dynamic(
+  () => import("@/app/route/components/RouteFlowMap"),
+  {
+    ssr: false,
+  },
+);
 
 export default function RoutePage() {
   const { selectedPlaces, removePlace } = useSelectedPlaces();
@@ -112,6 +121,9 @@ export default function RoutePage() {
   const [roadDistanceError, setRoadDistanceError] = useState("");
   const [roadDistanceMatrixKey, setRoadDistanceMatrixKey] = useState("");
   const [isGeneratingRoute, setIsGeneratingRoute] = useState(false);
+  const [problematicSegments, setProblematicSegments] = useState<
+    Array<{ fromIndex: number; toIndex: number }>
+  >([]);
 
   const [bnbResult, setBnbResult] = useState<BranchAndBoundResult | null>(null);
   const [visibleStepCount, setVisibleStepCount] = useState(0);
@@ -222,7 +234,10 @@ export default function RoutePage() {
 
   const fetchRoadDistanceMatrix = async (
     points: GraphPoint[],
-  ): Promise<Array<Array<number | null>>> => {
+  ): Promise<{
+    distances: Array<Array<number | null>>;
+    problematicSegments?: Array<{ fromIndex: number; toIndex: number }>;
+  }> => {
     const response = await fetch("/api/route/osrm-table", {
       method: "POST",
       headers: {
@@ -238,6 +253,7 @@ export default function RoutePage() {
 
     const data = (await response.json()) as {
       distances?: Array<Array<number | null>>;
+      problematicSegments?: Array<{ fromIndex: number; toIndex: number }>;
       error?: string;
     };
 
@@ -249,7 +265,10 @@ export default function RoutePage() {
       throw new Error("Invalid OSRM distance matrix response.");
     }
 
-    return data.distances;
+    return {
+      distances: data.distances,
+      problematicSegments: data.problematicSegments,
+    };
   };
 
   const handleGenerateRoute = async () => {
@@ -257,6 +276,7 @@ export default function RoutePage() {
 
     setIsGeneratingRoute(true);
     setRoadDistanceError("");
+    setProblematicSegments([]);
     setBnbResult(null);
     setVisibleStepCount(0);
 
@@ -264,23 +284,35 @@ export default function RoutePage() {
       const delayMs = Math.round(parsedDelaySeconds * 1000);
       setPlaybackDelayMs(delayMs);
 
-      const distances = hasMatchingMatrix
-        ? roadDistances
-        : await fetchRoadDistanceMatrix(graphPoints);
-      setRoadDistances(distances);
+      let distanceResult: {
+        distances: Array<Array<number | null>>;
+        problematicSegments?: Array<{ fromIndex: number; toIndex: number }>;
+      };
+
+      if (hasMatchingMatrix) {
+        distanceResult = {
+          distances: roadDistances,
+        };
+      } else {
+        distanceResult = await fetchRoadDistanceMatrix(graphPoints);
+      }
+
+      setRoadDistances(distanceResult.distances);
       setRoadDistanceMatrixKey(graphPointsKey);
+      setProblematicSegments(distanceResult.problematicSegments ?? []);
 
       const result = solveRouteWithBranchAndBound({
         startIndex,
         endIndex,
         labels: graphPoints.map((p) => p.label),
-        distances,
+        distances: distanceResult.distances,
       });
 
       setBnbResult(result);
     } catch (error: unknown) {
       setRoadDistances([]);
       setRoadDistanceMatrixKey("");
+      setProblematicSegments([]);
       setRoadDistanceError(
         error instanceof Error
           ? error.message
@@ -310,9 +342,9 @@ export default function RoutePage() {
       setRoadDistanceLoading(true);
       setRoadDistanceError("");
       try {
-        const distances = await fetchRoadDistanceMatrix(graphPoints);
+        const result = await fetchRoadDistanceMatrix(graphPoints);
         if (!cancelled) {
-          setRoadDistances(distances);
+          setRoadDistances(result.distances);
           setRoadDistanceMatrixKey(graphPointsKey);
         }
       } catch (error: unknown) {
@@ -372,6 +404,28 @@ export default function RoutePage() {
     setBnbResult(null);
     setVisibleStepCount(0);
   }, [startIndex, endIndex]);
+
+  const isBnbPlaybackComplete =
+    !!bnbResult && visibleStepCount >= bnbResult.steps.length;
+
+  const completedRoutePoints = useMemo<RouteFlowMapPoint[]>(() => {
+    if (!isBnbPlaybackComplete || !bnbResult || bnbResult.bestPath.length < 2) {
+      return [];
+    }
+
+    return bnbResult.bestPath
+      .map((nodeIndex) => {
+        const node = graphPoints[nodeIndex];
+        if (!node) return null;
+        return {
+          id: node.id,
+          label: node.label,
+          lat: node.lat,
+          lon: node.lon,
+        };
+      })
+      .filter((point): point is RouteFlowMapPoint => point !== null);
+  }, [bnbResult, graphPoints, isBnbPlaybackComplete]);
 
   const startCoords =
     startOption?.value === -2 ? currentLocation : (startOption?.coords ?? null);
@@ -493,7 +547,6 @@ export default function RoutePage() {
           </div>
         ) : (
           <>
-            {/* here we will now add the map */}
             {bnbResult && (
               <BranchAndBoundSection
                 bnbResult={bnbResult}
@@ -501,6 +554,36 @@ export default function RoutePage() {
                 roadDistanceError={roadDistanceError}
               />
             )}
+
+            {problematicSegments.length > 0 && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+                <h3 className="text-sm font-semibold text-amber-900">
+                  ⚠️ Road Data Missing
+                </h3>
+                <p className="mt-2 text-xs text-amber-800">
+                  No proper road data found on these route segments. Direct
+                  distances have been used instead:
+                </p>
+                <ul className="mt-3 space-y-1">
+                  {problematicSegments.map((segment, idx) => {
+                    const fromPoint = graphPoints[segment.fromIndex];
+                    const toPoint = graphPoints[segment.toIndex];
+                    const fromName =
+                      fromPoint?.label ?? `Point ${segment.fromIndex}`;
+                    const toName = toPoint?.label ?? `Point ${segment.toIndex}`;
+                    return (
+                      <li key={idx} className="text-xs text-amber-800">
+                        • {fromName} → {toName}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
+            {completedRoutePoints.length >= 2 ? (
+              <RouteFlowMap points={completedRoutePoints} />
+            ) : null}
 
             <RouteGraph
               places={places}

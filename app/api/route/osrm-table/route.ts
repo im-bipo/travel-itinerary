@@ -16,6 +16,28 @@ type OsrmTableResponse = {
 const OSRM_BASE_URL = "https://router.project-osrm.org";
 const MAX_POINTS = 25;
 
+/**
+ * Calculate straight-line distance between two coordinates in meters
+ */
+function calculateStraightLineDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
+  const R = 6371000; // Earth's radius in meters
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as OsrmTableRequest;
@@ -82,7 +104,48 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ distances: data.distances });
+    // Validate distances and detect unreasonable routes
+    const problematicSegments: Array<{ fromIndex: number; toIndex: number }> =
+      [];
+    const validatedDistances = data.distances.map((row, fromIndex) =>
+      row.map((distance, toIndex) => {
+        if (distance === null || typeof distance !== "number") {
+          return null;
+        }
+
+        const fromPoint = points[fromIndex];
+        const toPoint = points[toIndex];
+
+        if (!fromPoint || !toPoint) {
+          return distance;
+        }
+
+        const straightLineDist = calculateStraightLineDistance(
+          fromPoint.lat,
+          fromPoint.lon,
+          toPoint.lat,
+          toPoint.lon,
+        );
+
+        // If road distance is > 2.5x straight line, use straight line instead
+        if (distance > straightLineDist * 2.5) {
+          problematicSegments.push({
+            fromIndex,
+            toIndex,
+          });
+          return Math.round(straightLineDist);
+        }
+
+        return distance;
+      }),
+    );
+
+    return NextResponse.json({
+      distances: validatedDistances,
+      ...(problematicSegments.length > 0 && {
+        problematicSegments,
+      }),
+    });
   } catch (error: unknown) {
     return NextResponse.json(
       {
