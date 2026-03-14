@@ -6,6 +6,7 @@ import {
   Controls,
   MarkerType,
   ReactFlow,
+  useReactFlow,
   type Edge as RFEdge,
   type Node as RFNode,
 } from "@xyflow/react";
@@ -16,7 +17,16 @@ import type {
   GraphPoint,
   RouteOption,
 } from "@/app/route/components/types";
-import { GitBranchPlusIcon, Table, Trash2 } from "lucide-react";
+import {
+  GitBranchPlusIcon,
+  Lock,
+  LockOpen,
+  Expand,
+  Plus,
+  Minus,
+  Table,
+  Trash2,
+} from "lucide-react";
 
 type RouteGraphProps = {
   places: PlaceDetail[];
@@ -44,6 +54,7 @@ export default function RouteGraph({
   onDeletePlace,
 }: RouteGraphProps) {
   const [activeTab, setActiveTab] = useState<"graph" | "table">("graph");
+  const [isLocked, setIsLocked] = useState(true);
 
   const getPlaceIdFromPointId = (pointId: string): number | null => {
     if (!pointId.startsWith("place-")) return null;
@@ -64,6 +75,68 @@ export default function RouteGraph({
     if (value === -1) return "airport";
     if (value === -2) return currentLocation ? "current" : null;
     return `place-${value}`;
+  };
+
+  const GraphControls = () => {
+    const { zoomIn, zoomOut, fitView } = useReactFlow();
+
+    return (
+      <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-auto">
+        <button
+          onClick={() => setIsLocked(!isLocked)}
+          title={
+            isLocked ? "Unlock to zoom and drag" : "Lock to prevent changes"
+          }
+          className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors border ${
+            isLocked
+              ? "bg-white text-slate-900 border-slate-200 cursor-pointer"
+              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 cursor-pointer"
+          }`}
+        >
+          {isLocked ? (
+            <Lock className="h-4 w-4" />
+          ) : (
+            <LockOpen className="h-4 w-4" />
+          )}
+        </button>
+        <button
+          onClick={() => zoomIn()}
+          disabled={isLocked}
+          className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors border ${
+            isLocked
+              ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed"
+              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 cursor-pointer"
+          }`}
+          title="Zoom in"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => zoomOut()}
+          disabled={isLocked}
+          className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors border ${
+            isLocked
+              ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed"
+              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 cursor-pointer"
+          }`}
+          title="Zoom out"
+        >
+          <Minus className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => fitView()}
+          disabled={isLocked}
+          className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors border ${
+            isLocked
+              ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed"
+              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 cursor-pointer"
+          }`}
+          title="Fit view"
+        >
+          <Expand className="h-4 w-4" />
+        </button>
+      </div>
+    );
   };
 
   const graphPoints = useMemo(() => {
@@ -115,12 +188,19 @@ export default function RouteGraph({
     startId,
   ]);
 
+  const selectedRouteEdge = useMemo(() => {
+    const startNodeId = optionToNodeId(startId);
+    const endNodeId = optionToNodeId(endId);
+    if (!startNodeId || !endNodeId) return null;
+    return { source: startNodeId, target: endNodeId };
+  }, [startId, endId, currentLocation]);
+
   const highlightedEdgeKey = useMemo(() => {
-    const a = optionToNodeId(startId);
-    const b = optionToNodeId(endId);
-    if (!a || !b) return null;
-    return [a, b].sort().join("--");
-  }, [endId, startId, currentLocation]);
+    if (!selectedRouteEdge) return null;
+    return [selectedRouteEdge.source, selectedRouteEdge.target]
+      .sort()
+      .join("--");
+  }, [selectedRouteEdge]);
 
   const graphNodes = useMemo<RFNode[]>(() => {
     if (graphPoints.length === 0) return [];
@@ -210,7 +290,9 @@ export default function RouteGraph({
         const backwardMeters = roadDistances[j]?.[i] ?? null;
 
         const distanceKm = [forwardMeters, backwardMeters]
-          .filter((d): d is number => typeof d === "number" && Number.isFinite(d))
+          .filter(
+            (d): d is number => typeof d === "number" && Number.isFinite(d),
+          )
           .map((m) => m / 1000)
           .reduce((min, v) => Math.min(min, v), Number.POSITIVE_INFINITY);
 
@@ -230,19 +312,19 @@ export default function RouteGraph({
           type: "straight",
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            color: isHighlighted ? "#16a34a" : "#94a3b8",
+            color: "#94a3b8",
             width: 18,
             height: 18,
           },
           style: {
-            stroke: isHighlighted ? "#16a34a" : "#94a3b8",
-            strokeWidth: isHighlighted ? 3 : 1.2,
-            strokeDasharray: distanceKm == null ? "6 4" : undefined,
+            stroke: "#94a3b8",
+            strokeWidth: 1.2,
+            strokeDasharray: !Number.isFinite(distanceKm) ? "6 4" : undefined,
           },
           labelStyle: {
             fontSize: 11,
             fontWeight: 600,
-            fill: isHighlighted ? "#166534" : "#64748b",
+            fill: "#64748b",
           },
           labelBgStyle: {
             fill: "#ffffff",
@@ -254,8 +336,23 @@ export default function RouteGraph({
       }
     }
 
+    if (selectedRouteEdge) {
+      edges.push({
+        id: `${selectedRouteEdge.source}--${selectedRouteEdge.target}--highlight`,
+        source: selectedRouteEdge.source,
+        target: selectedRouteEdge.target,
+        type: "default",
+        style: {
+          stroke: "#16a34a",
+          strokeWidth: 3,
+          strokeDasharray: "8 6",
+        },
+        animated: true,
+      });
+    }
+
     return edges;
-  }, [graphPoints, highlightedEdgeKey, roadDistances]);
+  }, [graphPoints, highlightedEdgeKey, selectedRouteEdge, roadDistances]);
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -306,7 +403,10 @@ export default function RouteGraph({
       ) : null}
 
       {activeTab === "graph" ? (
-        <div className="mt-4 h-[460px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+        <div
+          className="mt-4 h-[460px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 relative"
+          style={{ pointerEvents: isLocked ? "none" : "auto" }}
+        >
           {graphNodes.length >= 2 ? (
             <ReactFlow
               nodes={graphNodes}
@@ -318,9 +418,13 @@ export default function RouteGraph({
               nodesConnectable={false}
               elementsSelectable
               proOptions={{ hideAttribution: true }}
+              zoomOnScroll={!isLocked}
+              zoomOnDoubleClick={!isLocked}
+              panOnScroll={false}
+              panOnDrag={!isLocked}
             >
               <Background color="#cbd5e1" gap={18} />
-              <Controls showInteractive={false} />
+              <GraphControls />
             </ReactFlow>
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-slate-500">
@@ -405,9 +509,15 @@ export default function RouteGraph({
                         roadDistances[fromIdx]?.[toIdx],
                         roadDistances[toIdx]?.[fromIdx],
                       ]
-                        .filter((d): d is number => typeof d === "number" && Number.isFinite(d))
+                        .filter(
+                          (d): d is number =>
+                            typeof d === "number" && Number.isFinite(d),
+                        )
                         .map((m) => m / 1000)
-                        .reduce((min, v) => Math.min(min, v), Number.POSITIVE_INFINITY);
+                        .reduce(
+                          (min, v) => Math.min(min, v),
+                          Number.POSITIVE_INFINITY,
+                        );
                       const isZero = fromIdx === toIdx;
 
                       return (
