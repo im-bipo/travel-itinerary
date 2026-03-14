@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Background,
   Controls,
@@ -24,6 +24,9 @@ type RouteGraphProps = {
   currentLocation: Coordinates | null;
   airportOption: RouteOption;
   currentLocationOption: RouteOption;
+  roadDistances: Array<Array<number | null>>;
+  roadDistanceError: string;
+  roadDistanceLoading: boolean;
 };
 
 export default function RouteGraph({
@@ -33,6 +36,9 @@ export default function RouteGraph({
   currentLocation,
   airportOption,
   currentLocationOption,
+  roadDistances,
+  roadDistanceError,
+  roadDistanceLoading,
 }: RouteGraphProps) {
   const optionToNodeId = (value: number | null): string | null => {
     if (value == null) return null;
@@ -41,7 +47,7 @@ export default function RouteGraph({
     return `place-${value}`;
   };
 
-  const graphPoints = useMemo<GraphPoint[]>(() => {
+  const graphPoints = useMemo(() => {
     const points: GraphPoint[] = [];
 
     for (const place of places) {
@@ -96,79 +102,6 @@ export default function RouteGraph({
     if (!a || !b) return null;
     return [a, b].sort().join("--");
   }, [endId, startId, currentLocation]);
-
-  const [roadDistances, setRoadDistances] = useState<
-    Array<Array<number | null>>
-  >([]);
-  const [roadDistanceError, setRoadDistanceError] = useState<string>("");
-  const [roadDistanceLoading, setRoadDistanceLoading] = useState(false);
-
-  useEffect(() => {
-    if (graphPoints.length < 2) {
-      setRoadDistances([]);
-      setRoadDistanceError("");
-      setRoadDistanceLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    const run = async () => {
-      setRoadDistanceLoading(true);
-      setRoadDistanceError("");
-
-      try {
-        const response = await fetch("/api/route/osrm-table", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            points: graphPoints.map((point) => ({
-              lat: point.lat,
-              lon: point.lon,
-            })),
-          }),
-        });
-
-        const data = (await response.json()) as {
-          distances?: Array<Array<number | null>>;
-          error?: string;
-        };
-
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch road distances.");
-        }
-
-        if (!Array.isArray(data.distances)) {
-          throw new Error("Invalid road distance matrix response.");
-        }
-
-        if (!cancelled) {
-          setRoadDistances(data.distances);
-        }
-      } catch (error: unknown) {
-        if (!cancelled) {
-          setRoadDistances([]);
-          setRoadDistanceError(
-            error instanceof Error
-              ? error.message
-              : "Failed to fetch road distances.",
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setRoadDistanceLoading(false);
-        }
-      }
-    };
-
-    run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [graphPoints]);
 
   const graphNodes = useMemo<RFNode[]>(() => {
     if (graphPoints.length === 0) return [];
@@ -247,7 +180,11 @@ export default function RouteGraph({
           source: sourcePoint.id,
           target: targetPoint.id,
           label:
-            distanceKm != null ? `${distanceKm.toFixed(1)} km` : "No road path",
+            distanceKm != null
+              ? `${distanceKm.toFixed(1)} km`
+              : roadDistances.length > 0
+                ? "No road path"
+                : "Pending",
           type: "straight",
           markerEnd: {
             type: MarkerType.ArrowClosed,
