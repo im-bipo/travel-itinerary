@@ -500,7 +500,7 @@ export default function RoutePage() {
                 <p className="mt-3 text-sm text-red-600">{roadDistanceError}</p>
               ) : null}
 
-              {bnbResult ? (
+              {bnbResult && visibleStepCount >= (bnbResult.steps?.length ?? 0) ? (
                 <div className="mt-4 grid gap-4 lg:grid-cols-3">
                   <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
                     <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
