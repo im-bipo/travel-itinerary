@@ -100,11 +100,10 @@ export default function RouteGraph({
           )}
         </button>
         <button
-          onClick={() => zoomIn()}
-          disabled={isLocked}
+          onClick={() => !isLocked && zoomIn()}
           className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors border ${
             isLocked
-              ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed"
+              ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed pointer-events-none"
               : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 cursor-pointer"
           }`}
           title="Zoom in"
@@ -112,11 +111,10 @@ export default function RouteGraph({
           <Plus className="h-4 w-4" />
         </button>
         <button
-          onClick={() => zoomOut()}
-          disabled={isLocked}
+          onClick={() => !isLocked && zoomOut()}
           className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors border ${
             isLocked
-              ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed"
+              ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed pointer-events-none"
               : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 cursor-pointer"
           }`}
           title="Zoom out"
@@ -124,11 +122,10 @@ export default function RouteGraph({
           <Minus className="h-4 w-4" />
         </button>
         <button
-          onClick={() => fitView()}
-          disabled={isLocked}
+          onClick={() => !isLocked && fitView()}
           className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors border ${
             isLocked
-              ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed"
+              ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed pointer-events-none"
               : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 cursor-pointer"
           }`}
           title="Fit view"
@@ -403,10 +400,7 @@ export default function RouteGraph({
       ) : null}
 
       {activeTab === "graph" ? (
-        <div
-          className="mt-4 h-[460px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 relative"
-          style={{ pointerEvents: isLocked ? "none" : "auto" }}
-        >
+        <div className="mt-4 h-[460px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 relative">
           {graphNodes.length >= 2 ? (
             <ReactFlow
               nodes={graphNodes}
@@ -422,6 +416,7 @@ export default function RouteGraph({
               zoomOnDoubleClick={!isLocked}
               panOnScroll={false}
               panOnDrag={!isLocked}
+              style={{ pointerEvents: isLocked ? "none" : "auto" }}
             >
               <Background color="#cbd5e1" gap={18} />
               <GraphControls />

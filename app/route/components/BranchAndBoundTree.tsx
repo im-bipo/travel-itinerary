@@ -1,17 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Background,
-  Controls,
   MarkerType,
   Position,
   ReactFlow,
+  useReactFlow,
   type Edge as RFEdge,
   type Node as RFNode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import type { BranchTraceNode } from "@/lib/branch-and-bound";
+import { Lock, LockOpen, Expand, Plus, Minus } from "lucide-react";
 
 type BranchAndBoundTreeProps = {
   steps: BranchTraceNode[];
@@ -27,10 +28,81 @@ export default function BranchAndBoundTree({
   steps,
   visibleCount,
 }: BranchAndBoundTreeProps) {
+  const [isLocked, setIsLocked] = useState(true);
+
+  const AutoFitEffect = () => {
+    const { fitView } = useReactFlow();
+
+    useEffect(() => {
+      fitView({ padding: 0.35 });
+    }, [graph.nodes.length, fitView]);
+
+    return null;
+  };
+
   const visibleSteps = useMemo(
     () => steps.slice(0, Math.max(visibleCount, 0)),
     [steps, visibleCount],
   );
+
+  const TreeControls = () => {
+    const { zoomIn, zoomOut, fitView } = useReactFlow();
+
+    return (
+      <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-auto">
+        <button
+          onClick={() => setIsLocked(!isLocked)}
+          title={
+            isLocked ? "Unlock to zoom and drag" : "Lock to prevent changes"
+          }
+          className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors border ${
+            isLocked
+              ? "bg-white text-slate-900 border-slate-200 cursor-pointer"
+              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 cursor-pointer"
+          }`}
+        >
+          {isLocked ? (
+            <Lock className="h-4 w-4" />
+          ) : (
+            <LockOpen className="h-4 w-4" />
+          )}
+        </button>
+        <button
+          onClick={() => !isLocked && zoomIn()}
+          className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors border ${
+            isLocked
+              ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed pointer-events-none"
+              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 cursor-pointer"
+          }`}
+          title="Zoom in"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => !isLocked && zoomOut()}
+          className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors border ${
+            isLocked
+              ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed pointer-events-none"
+              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 cursor-pointer"
+          }`}
+          title="Zoom out"
+        >
+          <Minus className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => !isLocked && fitView()}
+          className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors border ${
+            isLocked
+              ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed pointer-events-none"
+              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 cursor-pointer"
+          }`}
+          title="Fit view"
+        >
+          <Expand className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  };
 
   const graph = useMemo(() => {
     const childrenByParent = new Map<number, BranchTraceNode[]>();
@@ -210,7 +282,7 @@ export default function BranchAndBoundTree({
   }
 
   return (
-    <div className="h-[80vh] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+    <div className="h-[80vh] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 relative">
       <ReactFlow
         nodes={graph.nodes}
         edges={graph.edges}
@@ -220,14 +292,18 @@ export default function BranchAndBoundTree({
         nodesDraggable
         nodesConnectable={false}
         elementsSelectable
-        panOnDrag
-        panOnScroll
+        zoomOnScroll={!isLocked}
+        zoomOnDoubleClick={!isLocked}
+        panOnDrag={!isLocked}
+        panOnScroll={false}
         minZoom={0.05}
         maxZoom={2.5}
         proOptions={{ hideAttribution: true }}
+        style={{ pointerEvents: isLocked ? "none" : "auto" }}
       >
         <Background color="#cbd5e1" gap={20} />
-        <Controls showInteractive />
+        <TreeControls />
+        <AutoFitEffect />
       </ReactFlow>
       <div className="border-t border-slate-200 bg-white px-4 py-2 text-xs text-slate-600">
         Expanded nodes are blue, pruned nodes are red dashed, and best solution
