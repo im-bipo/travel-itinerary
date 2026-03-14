@@ -208,25 +208,25 @@ export default function RouteGraph({
         const edgeKey = [sourcePoint.id, targetPoint.id].sort().join("--");
         const forwardMeters = roadDistances[i]?.[j] ?? null;
         const backwardMeters = roadDistances[j]?.[i] ?? null;
-        const metersCandidates = [forwardMeters, backwardMeters].filter(
-          (d): d is number => typeof d === "number" && Number.isFinite(d),
-        );
-        const distanceKm =
-          metersCandidates.length > 0
-            ? Math.min(...metersCandidates) / 1000
-            : null;
+
+        const distanceKm = [forwardMeters, backwardMeters]
+          .filter((d): d is number => typeof d === "number" && Number.isFinite(d))
+          .map((m) => m / 1000)
+          .reduce((min, v) => Math.min(min, v), Number.POSITIVE_INFINITY);
+
+        const label = Number.isFinite(distanceKm)
+          ? `${distanceKm.toFixed(1)} km`
+          : roadDistances.length > 0
+            ? "No road path"
+            : "Pending";
+
         const isHighlighted = edgeKey === highlightedEdgeKey;
 
         edges.push({
           id: edgeKey,
           source: sourcePoint.id,
           target: targetPoint.id,
-          label:
-            distanceKm != null
-              ? `${distanceKm.toFixed(1)} km`
-              : roadDistances.length > 0
-                ? "No road path"
-                : "Pending",
+          label,
           type: "straight",
           markerEnd: {
             type: MarkerType.ArrowClosed,
@@ -401,12 +401,13 @@ export default function RouteGraph({
                       </div>
                     </td>
                     {graphPoints.map((toPoint, toIdx) => {
-                      const distanceMeters =
-                        roadDistances[fromIdx]?.[toIdx] ?? null;
-                      const distanceKm =
-                        distanceMeters != null
-                          ? (distanceMeters / 1000).toFixed(1)
-                          : null;
+                      const distanceKm = [
+                        roadDistances[fromIdx]?.[toIdx],
+                        roadDistances[toIdx]?.[fromIdx],
+                      ]
+                        .filter((d): d is number => typeof d === "number" && Number.isFinite(d))
+                        .map((m) => m / 1000)
+                        .reduce((min, v) => Math.min(min, v), Number.POSITIVE_INFINITY);
                       const isZero = fromIdx === toIdx;
 
                       return (
@@ -415,15 +416,15 @@ export default function RouteGraph({
                           className={`border border-slate-300 px-3 py-2 text-center ${
                             isZero
                               ? "bg-slate-100 text-slate-500"
-                              : distanceKm === null
+                              : !Number.isFinite(distanceKm)
                                 ? "bg-red-50 text-red-600"
                                 : "bg-white text-slate-700"
                           }`}
                         >
                           {isZero
                             ? "—"
-                            : distanceKm
-                              ? `${distanceKm}`
+                            : Number.isFinite(distanceKm)
+                              ? `${distanceKm.toFixed(1)}`
                               : "No path"}
                         </td>
                       );
