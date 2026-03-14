@@ -5,7 +5,6 @@ import { useSelectedPlaces } from "@/app/context/SelectedPlacesContext";
 import { getPlacesByIds, PlaceDetail } from "@/actions/getPlacesByIds";
 import RouteSelectors from "@/app/route/components/RouteSelectors";
 import RouteGraph from "@/app/route/components/RouteGraph";
-import PlacesTable from "@/app/route/components/PlacesTable";
 import BranchAndBoundTree from "@/app/route/components/BranchAndBoundTree";
 import type { GraphPoint, RouteOption } from "@/app/route/components/types";
 import {
@@ -549,7 +548,6 @@ export default function RoutePage() {
                 />
               </div>
             </div>
-            <PlacesTable places={places} />
           </>
         )}
       </div>
