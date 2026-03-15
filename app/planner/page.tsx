@@ -16,9 +16,61 @@ import {
   TrendingUpDownIcon,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import type { PlaceResult } from "@/actions/search";
 import { getPlacesByIds, PlaceDetail } from "@/actions/getPlacesByIds";
 import { useSelectedPlaces } from "@/app/context/SelectedPlacesContext";
+
+const markdownRenderers: Components = {
+  h1: ({ children }) => (
+    <h1 className="mt-4 text-xl font-semibold tracking-tight text-slate-900 first:mt-0 md:text-2xl">
+      {children}
+    </h1>
+  ),
+  h2: ({ children }) => (
+    <h2 className="mt-4 text-lg font-semibold text-slate-900 first:mt-0 md:text-xl">
+      {children}
+    </h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="mt-3 text-base font-semibold text-slate-900 first:mt-0 md:text-lg">
+      {children}
+    </h3>
+  ),
+  p: ({ children }) => (
+    <p className="my-2 text-[15px] leading-7 text-slate-800">{children}</p>
+  ),
+  ul: ({ children }) => (
+    <ul className="my-3 list-disc space-y-2 pl-6 text-[15px] leading-7 text-slate-800 marker:text-primary/80">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="my-3 list-decimal space-y-3 pl-6 text-[15px] leading-7 text-slate-800 marker:font-semibold marker:text-slate-600">
+      {children}
+    </ol>
+  ),
+  li: ({ children }) => <li className="pl-1">{children}</li>,
+  hr: () => <hr className="my-5 border-slate-200" />,
+  strong: ({ children }) => (
+    <strong className="font-semibold text-slate-900">{children}</strong>
+  ),
+  a: ({ children, href }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="font-medium text-primary underline underline-offset-2"
+    >
+      {children}
+    </a>
+  ),
+  code: ({ children }) => (
+    <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-900">
+      {children}
+    </code>
+  ),
+};
 
 type ChatMessage = {
   id: number;
@@ -277,8 +329,8 @@ export default function PlannerPage() {
                       }`}
                     >
                       {message.role === "assistant" ? (
-                        <div className="prose prose-sm max-w-none text-slate-800 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_strong]:font-semibold [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_a]:text-primary [&_a]:underline">
-                          <ReactMarkdown>
+                        <div className="max-w-none text-slate-800">
+                          <ReactMarkdown components={markdownRenderers}>
                             {message.text ||
                               (message.loading ? "Thinking..." : "")}
                           </ReactMarkdown>

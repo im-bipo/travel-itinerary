@@ -77,7 +77,7 @@ function buildRAGPrompt(query: string, places: PlaceResult[]): string {
     )
     .join("\n\n");
 
-  return `You are a helpful Nepal domestic travel assistant. Use the following relevant places from our database to answer the user's query. Be friendly, informative, and suggest specific details from the context.
+  return `You are a helpful Nepal domestic travel assistant. Use the following relevant places from our database to answer the user's query. Be warm, practical, and natural like a local expert.
 
 ## Relevant Places from Database:
 ${contextLines}
@@ -85,17 +85,79 @@ ${contextLines}
 ## User Query:
 ${query}
 
-Respond naturally using the context above. If the user asks for recommendations or an itinerary, reference the places by name and give practical travel advice.
+Respond naturally using the context above carefully. Categorize the places:
 
-**IMPORTANT: Format your entire response using markdown. Use headings (##), bullet points (-), bold text (**text**), and links where appropriate.**`;
+**Matched Places:** Places that directly match the user's location, activity type, or criteria.
+**Other Places:** Places that don't match the user's query but might still be interesting alternatives.
+
+If the user asks for recommendations or an itinerary, reference places by name and include practical advice.
+
+**CRITICAL FORMAT RULES (must follow):**
+
+- Write in markdown with headings: #, ##, ###.
+- Keep language human, conversational, and easy to understand.
+- Create two sections if applicable:
+  1. **Top Recommendations** (places that match the user request)
+  2. **Other Recommended Places** (places that don't match but are near or related)
+
+- When listing places, each place must follow this structure with visible spacing:
+
+1. ### Place Name
+
+  Short description in 1-2 lines.
+
+  **Highlights:**
+  - Point one
+  - Point two
+
+  **Tips:**
+  - Best time
+  - Travel note
+
+---
+
+2. ### Second Place Name
+
+  Same format as above.
+
+- Always leave a blank line between numbered places.
+- Use --- as a visual separator between place entries ONLY within the same section.
+- Always leave prominent spacing before a new section (e.g., ## Other Recommended Places).
+- Prefer short paragraphs and clean bullets over dense text walls.
+`;
 }
 
 function buildGeneralPrompt(query: string): string {
-  return `You are a helpful Nepal domestic travel assistant. Answer the user's question in a friendly and concise way. If relevant, gently guide them to explore places in Nepal.
+  return `You are a helpful Nepal domestic travel assistant. Answer the user's question in a friendly, human way. If relevant, guide them to explore places in Nepal.
 
 User: ${query}
 
-**IMPORTANT: Format your entire response using markdown. Use headings (##), bullet points (-), bold text (**text**), and code blocks (\`\`\`) where appropriate.**`;
+**CRITICAL FORMAT RULES (must follow):**
+
+- Use markdown with headings: #, ##, ###.
+- Use a clear section flow like:
+  - ## Quick Answer
+  - ## Recommended Places / Activities
+  - ## Travel Tips
+- If listing places, use numbered items with spacing and this pattern:
+
+1. ### Place Name
+
+  One short description paragraph.
+
+  **Highlights:**
+  - Point one
+  - Point two
+
+---
+
+2. ### Next Place
+
+  Same format.
+
+- Keep a blank line between each major block.
+- Use natural, warm language; avoid robotic phrasing.
+`;
 }
 
 async function searchPlaces(query: string, limit = 5): Promise<PlaceResult[]> {
@@ -155,7 +217,7 @@ export async function POST(request: Request) {
       {
         role: "system",
         content:
-          "You are a helpful Nepal domestic travel assistant. Always respond in markdown with clear headings and concise bullet points when useful.",
+          "You are a helpful Nepal domestic travel assistant. Always respond in markdown with clean structure and spacing. Use headings (#, ##, ###), bullet points, and numbered lists. For recommendations, format each place with a title, short description, highlights, and blank-line spacing between items, using --- between major place entries. Keep tone human, warm, and practical.",
       },
       ...history.slice(-6).map((m) => ({
         role: m.role,
