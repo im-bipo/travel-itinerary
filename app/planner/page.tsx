@@ -3,12 +3,17 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  ArrowRight,
+  Clock3,
   Compass,
   Loader2,
   MapPin,
   Route,
+  ScanFace,
   SendHorizonal,
-  Sparkles,
+  ShieldCheck,
+  Stars,
+  TrendingUpDownIcon,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import type { PlaceResult } from "@/actions/search";
@@ -50,6 +55,18 @@ export default function PlannerPage() {
 
   const hasStarted = messages.length > 0;
   const showRightPanel = sources.length > 0;
+  const selectedPlaceCount = selectedPlaces.length;
+
+  const assistantReplyCount = useMemo(
+    () =>
+      messages.filter(
+        (message) =>
+          message.role === "assistant" &&
+          !message.loading &&
+          message.text.trim().length > 0,
+      ).length,
+    [messages],
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -195,77 +212,102 @@ export default function PlannerPage() {
   }
 
   return (
-    <main className="relative h-[calc(100vh-4rem)] overflow-hidden bg-[linear-gradient(120deg,rgba(0,128,62,0.06),rgba(255,255,255,1),rgba(0,128,62,0.04))]">
-      <div className="mx-auto flex h-full w-full max-w-7xl gap-5 overflow-hidden px-4 py-4 md:px-6 md:py-5">
+    <main className="relative h-[calc(100vh-4rem)] overflow-hidden bg-slate-50">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(15,66,114,0.16),transparent_38%),radial-gradient(circle_at_100%_100%,rgba(14,116,144,0.14),transparent_32%)]" />
+      <div className="pointer-events-none absolute -top-24 left-1/4 h-72 w-72 rounded-full bg-primary/8 blur-3xl" />
+
+      <div className="relative mx-auto flex h-full w-full max-w-screen-2xl gap-4 overflow-hidden px-3 py-3 md:gap-6 md:px-6 md:py-5">
         <section
-          className={`relative flex h-full flex-1 flex-col overflow-hidden rounded-3xl border border-primary/10 bg-white/45 shadow-[0_12px_30px_rgba(2,32,16,0.08)] backdrop-blur-sm ${showRightPanel ? "lg:w-[65%]" : "lg:w-full"}`}
+          className={`relative flex h-full flex-1 flex-col overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/85 shadow-[0_24px_60px_-34px_rgba(15,66,114,0.65)] backdrop-blur-sm ${showRightPanel ? "lg:w-[66%]" : "lg:w-full"}`}
         >
-          <div className="border-b border-primary/10 bg-white/70 px-5 py-4 backdrop-blur-sm md:px-6">
-            <div className="flex items-center justify-between">
+          <div className="border-b border-slate-200/80 bg-[linear-gradient(120deg,rgba(15,66,114,0.08),rgba(255,255,255,0.95),rgba(8,145,178,0.08))] px-4 py-4 md:px-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Sparkles className="h-5 w-5" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_10px_28px_-12px_rgba(15,66,114,0.85)]">
+                  <TrendingUpDownIcon className="h-5 w-5" />
                 </div>
                 <div>
                   <h1 className="text-base font-semibold text-slate-900 md:text-lg">
-                    Planner Assistant
+                    Trip Planning Workspace
                   </h1>
-                  <p className="text-xs text-slate-500 md:text-sm">
-                    Plan domestic trips with guided chat and route-ready output
+                  <p className="text-xs text-slate-600 md:text-sm">
+                    AI travel copilot with route-ready recommendations
                   </p>
                 </div>
               </div>
-              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                Online
-              </span>
+
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Trusted Results
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+                  <Clock3 className="h-3.5 w-3.5" />
+                  Live Session
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
+          <div className="flex-1 overflow-y-auto px-3 py-4 md:px-6 md:py-5">
             {!hasStarted ? (
-              <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center text-center md:mt-16">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <Compass className="h-7 w-7" />
+              <div className="mx-auto mt-6 flex max-w-3xl flex-col items-center text-center md:mt-10">
+                <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Compass className="h-8 w-8" />
                 </div>
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
-                  Where do you want to travel next?
+                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+                  <Stars className="h-3.5 w-3.5 text-amber-500" />
+                  Personalized itinerary engine
+                </div>
+                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900 md:text-4xl">
+                  Build a premium travel plan in minutes
                 </h2>
-                <p className="mt-3 max-w-2xl text-sm text-slate-600 md:text-base">
-                  Start with your city, chat naturally, and build your itinerary
-                  step by step with destination, hotels, restaurants, partners,
-                  and map-ready flow.
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 md:text-base">
+                  Ask naturally and get structured recommendations for places,
+                  hotels, food stops, and route sequencing so your final plan is
+                  ready to optimize.
                 </p>
               </div>
             ) : (
-              <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 pb-2">
+              <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 pb-3">
                 {messages.map((message) => (
-                  <article
+                  <div
                     key={message.id}
-                    className={`w-fit max-w-[85%] rounded-2xl px-4 py-3 text-sm md:text-base ${
-                      message.role === "user"
-                        ? "ml-auto rounded-br-sm bg-primary text-white shadow-[0_8px_18px_rgba(8,104,63,0.3)]"
-                        : "rounded-bl-sm border border-slate-200/80 bg-white/90 text-slate-800 shadow-sm"
-                    }`}
+                    className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    {message.role === "assistant" ? (
-                      <div className="prose prose-sm max-w-none text-slate-800 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0 [&_strong]:font-semibold [&_code]:bg-slate-100 [&_code]:px-1 [&_code]:rounded [&_a]:text-primary [&_a]:underline">
-                        <ReactMarkdown>
-                          {message.text ||
-                            (message.loading ? "Thinking..." : "")}
-                        </ReactMarkdown>
-                        {message.loading && (
-                          <span className="mt-2 inline-flex items-center gap-2 text-xs text-slate-400">
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            Streaming...
-                          </span>
-                        )}
+                    {message.role === "assistant" && (
+                      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <ScanFace className="h-4 w-4" />
                       </div>
-                    ) : (
-                      <span className="whitespace-pre-wrap">
-                        {message.text}
-                      </span>
                     )}
-                  </article>
+
+                    <article
+                      className={`w-fit max-w-[88%] rounded-2xl px-4 py-3 text-sm md:text-[15px] ${
+                        message.role === "user"
+                          ? "rounded-br-sm bg-primary text-white shadow-[0_16px_30px_-16px_rgba(15,66,114,0.95)]"
+                          : "rounded-bl-sm border border-slate-200 bg-white text-slate-800 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.9)]"
+                      }`}
+                    >
+                      {message.role === "assistant" ? (
+                        <div className="prose prose-sm max-w-none text-slate-800 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_strong]:font-semibold [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_a]:text-primary [&_a]:underline">
+                          <ReactMarkdown>
+                            {message.text ||
+                              (message.loading ? "Thinking..." : "")}
+                          </ReactMarkdown>
+                          {message.loading && (
+                            <span className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-500">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Streaming response
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="whitespace-pre-wrap">
+                          {message.text}
+                        </span>
+                      )}
+                    </article>
+                  </div>
                 ))}
                 <div ref={bottomRef} />
               </div>
@@ -273,16 +315,16 @@ export default function PlannerPage() {
           </div>
 
           <div
-            className={`border-t border-primary/10 bg-white/75 px-4 pb-5 pt-4 backdrop-blur ${hasStarted ? "" : "mt-auto"}`}
+            className={`border-t border-slate-200/80 bg-white/95 px-3 pb-4 pt-3 md:px-6 md:pb-5 md:pt-4 ${hasStarted ? "" : "mt-auto"}`}
           >
-            <div className="mx-auto flex w-full max-w-3xl flex-wrap gap-2 pb-3">
+            <div className="mx-auto flex w-full max-w-4xl flex-wrap gap-2 pb-3">
               {suggestions.map((prompt) => (
                 <button
                   key={prompt}
                   type="button"
                   disabled={isLoading}
                   onClick={() => submitMessage(prompt)}
-                  className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary hover:text-white disabled:opacity-50 md:text-sm"
+                  className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:opacity-50 md:text-sm"
                 >
                   {prompt}
                 </button>
@@ -291,18 +333,18 @@ export default function PlannerPage() {
 
             <form
               onSubmit={handleSubmit}
-              className="mx-auto flex w-full max-w-3xl items-center gap-2 rounded-2xl border border-primary/15 bg-white px-2 py-1 shadow-[0_6px_16px_rgba(15,23,42,0.08)]"
+              className="mx-auto flex w-full max-w-4xl items-center gap-2 rounded-2xl border border-slate-300 bg-white px-2 py-1.5 shadow-[0_14px_28px_-22px_rgba(15,23,42,0.95)]"
             >
               <input
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                placeholder="Message planner bot..."
+                placeholder="Ask for destinations, hotels, timing, or route order..."
                 disabled={isLoading}
-                className="h-10 flex-1 rounded-xl border-none bg-transparent px-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 disabled:opacity-50 md:text-base"
+                className="h-11 flex-1 rounded-xl border-none bg-transparent px-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 disabled:opacity-50 md:text-base"
               />
               <button
                 type="submit"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!input.trim() || isLoading}
                 aria-label="Send message"
               >
@@ -317,13 +359,13 @@ export default function PlannerPage() {
         </section>
 
         {showRightPanel && (
-          <aside className="hidden h-full w-[35%] shrink-0 overflow-hidden rounded-3xl border border-primary/10 bg-white/55 shadow-[0_12px_30px_rgba(2,32,16,0.08)] backdrop-blur-sm lg:flex lg:flex-col">
-            <div className="shrink-0 border-b border-primary/10 bg-white/70 px-5 py-4">
+          <aside className="hidden h-full w-[34%] shrink-0 overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/90 shadow-[0_24px_60px_-34px_rgba(15,66,114,0.65)] lg:flex lg:flex-col">
+            <div className="shrink-0 border-b border-slate-200 px-5 py-4">
               <h3 className="text-sm font-semibold text-slate-900 md:text-base">
-                Matched Places
+                Discovery Results
               </h3>
               <p className="mt-1 text-xs text-slate-500">
-                Top results from your travel database
+                Curated places matched from your request
               </p>
             </div>
 
@@ -338,23 +380,23 @@ export default function PlannerPage() {
                   return (
                     <article
                       key={`${place.place_id}-${i}`}
-                      className="overflow-hidden rounded-2xl border border-primary/15 bg-white shadow-sm"
+                      className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
                     >
                       {detail?.imageUrl && (
                         <div className="h-36 w-full overflow-hidden">
                           <img
                             src={detail.imageUrl}
                             alt={detail.name}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
                           />
                         </div>
                       )}
                       <div className="p-4">
-                        <div className="mb-2 flex items-center justify-between">
-                          <h4 className="text-sm font-semibold text-slate-900">
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                          <h4 className="line-clamp-1 text-sm font-semibold text-slate-900">
                             {place.name}
                           </h4>
-                          <span className="rounded-full bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
+                          <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-1 text-[11px] font-medium text-primary">
                             {place.type ?? "Place"}
                           </span>
                         </div>
@@ -369,8 +411,8 @@ export default function PlannerPage() {
                           </p>
                         )}
                         {place.$similarity !== undefined && (
-                          <p className="mt-1 text-[10px] text-slate-400">
-                            Match: {(place.$similarity * 100).toFixed(0)}%
+                          <p className="mt-1 text-[10px] font-medium text-slate-400">
+                            Confidence: {(place.$similarity * 100).toFixed(0)}%
                           </p>
                         )}
 
@@ -378,9 +420,9 @@ export default function PlannerPage() {
                           type="button"
                           onClick={() => addPlace(place)}
                           disabled={isSelected}
-                          className="mt-3 inline-flex w-full items-center justify-center rounded-full border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                          className="mt-3 inline-flex w-full items-center justify-center gap-1 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {isSelected ? "Added" : "Add"}
+                          {isSelected ? "Added to trip" : "Add to trip"}
                         </button>
                       </div>
                     </article>
@@ -389,28 +431,29 @@ export default function PlannerPage() {
               </div>
             </div>
 
-            <div className="shrink-0 border-t border-primary/10 bg-white/70 px-4 py-4">
-              <div className="flex items-center justify-between pb-2">
+            <div className="shrink-0 border-t border-slate-200 bg-slate-50/70 px-4 py-4">
+              <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-slate-900 md:text-base">
                   Selected Places
                 </h3>
-                <span className="text-xs text-slate-500">
-                  {selectedPlaces.length} added
+                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+                  {selectedPlaceCount} added
                 </span>
               </div>
 
-              {selectedPlaces.length === 0 ? (
-                <p className="mt-2 text-xs text-slate-500">
-                  Add places from the matched results to build your route.
+              {selectedPlaceCount === 0 ? (
+                <p className="rounded-xl border border-dashed border-slate-300 bg-white px-3 py-4 text-xs text-slate-500">
+                  Add destinations from Discovery Results to prepare your
+                  optimized route.
                 </p>
               ) : (
-                <div className="mt-1 max-h-80 space-y-2 overflow-y-auto pr-1">
+                <div className="max-h-44 space-y-2 overflow-y-auto pr-1">
                   {selectedPlaces.map((place) => (
                     <div
                       key={place.place_id}
-                      className="flex items-center justify-between rounded-xl border border-primary/15 bg-white px-3 py-2"
+                      className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2"
                     >
-                      <div className="text-sm font-medium text-slate-900">
+                      <div className="line-clamp-1 text-sm font-medium text-slate-900">
                         {place.name}
                       </div>
                       <button
@@ -426,10 +469,10 @@ export default function PlannerPage() {
               )}
             </div>
 
-            <div className="shrink-0 border-t border-primary/10 bg-primary/5 px-4 py-4">
+            <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-4">
               <button
                 type="button"
-                disabled={selectedPlaces.length === 0}
+                disabled={selectedPlaceCount === 0}
                 onClick={() => {
                   router.push("/route");
                 }}
@@ -437,11 +480,34 @@ export default function PlannerPage() {
               >
                 <Route className="h-4 w-4" />
                 Generate Route Plan
+                <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           </aside>
         )}
       </div>
+
+      {showRightPanel && (
+        <div className="fixed inset-x-3 bottom-3 z-20 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-[0_20px_35px_-26px_rgba(15,23,42,0.95)] backdrop-blur lg:hidden">
+          <div className="mb-2 flex items-center justify-between text-xs text-slate-600">
+            <span>Selected places</span>
+            <span className="font-semibold text-slate-900">
+              {selectedPlaceCount}
+            </span>
+          </div>
+          <button
+            type="button"
+            disabled={selectedPlaceCount === 0}
+            onClick={() => {
+              router.push("/route");
+            }}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Route className="h-4 w-4" />
+            Continue to Route Plan
+          </button>
+        </div>
+      )}
     </main>
   );
 }
