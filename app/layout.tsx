@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SelectedPlacesProvider } from "@/app/context/SelectedPlacesContext";
 import NavBar from "@/app/components/NavBar";
+import Image from "next/image";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,8 +35,15 @@ export default function RootLayout({
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <div className="flex h-16 items-center justify-between">
                 <div className="flex items-center">
-                  <a href="/" className="text-lg font-bold">
-                    Travel Planner
+                  <a href="/" className="text-lg font-bold flex items-center">
+                    <Image
+                      src="/travel-itinerary.png"
+                      alt="Travel Itinerary Logo"
+                      width={300}
+                      height={300}
+                      className="inline-block mr-2 w-16"
+                    />
+                    Travel Itinerary
                   </a>
                 </div>
                 <NavBar />

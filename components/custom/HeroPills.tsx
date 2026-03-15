@@ -47,7 +47,7 @@ export default function HeroPills({ services }: { services: ServiceItem[] }) {
         const Icon = ICONS[service.icon] ?? Car;
         const col = index % cols;
         const row = Math.floor(index / cols);
-        const isGreen = (row + col) % 2 === 0;
+        const isPrimary = (row + col) % 2 === 0;
 
         return (
           <Link
@@ -56,20 +56,20 @@ export default function HeroPills({ services }: { services: ServiceItem[] }) {
             className={`group relative z-0 overflow-hidden flex items-center gap-4 justify-start w-full rounded-full px-4 py-3 md:px-6 md:py-3 text-sm md:text-base font-semibold shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all min-h-14`}
           >
             <span
-              className={`${isGreen ? "bg-[#00803E]" : "bg-white"} absolute inset-0 rounded-full ${isGreen ? "" : "border border-[#00803E]"}`}
+              className={`${isPrimary ? "bg-primary" : "bg-white"} absolute inset-0 rounded-full ${isPrimary ? "" : "border border-primary"}`}
               aria-hidden
             />
 
             <span
-              className={`relative z-10 flex items-center justify-center rounded-full h-10 w-10 md:h-11 md:w-11 shrink-0 ${isGreen ? "bg-white" : "bg-[#00803E]"}`}
+              className={`relative z-10 flex items-center justify-center rounded-full h-10 w-10 md:h-11 md:w-11 shrink-0 ${isPrimary ? "bg-white" : "bg-primary"}`}
             >
               <Icon
-                className={`${isGreen ? "h-5 w-5 text-[#00803E]" : "h-5 w-5 text-white"}`}
+                className={`${isPrimary ? "h-5 w-5 text-primary" : "h-5 w-5 text-white"}`}
               />
             </span>
 
             <span
-              className={`relative z-10 truncate text-left ${isGreen ? "text-white" : "text-[#00803E]"}`}
+              className={`relative z-10 truncate text-left ${isPrimary ? "text-white" : "text-primary"}`}
             >
               {service.label}
             </span>
