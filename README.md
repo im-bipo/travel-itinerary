@@ -1,8 +1,29 @@
-# Travel Itinerary Platform
+<div align="center">
+  <img src="public/travel-itinerary.png" alt="Travel Itinerary Logo" width="240" />
+
+  <h1>Travel Itinerary</h1>
+
+  <p style="max-width: 680px; margin: 0 auto;">
+    A travel planning platform built with Next.js, TypeScript, Tailwind CSS, Prisma, and vector search. It combines streaming AI responses, retrieval-augmented recommendations, and algorithmic route optimization into one workflow.
+  </p>
+
+[![View Demo](https://img.shields.io/badge/View%20Demo-%F0%9F%8E%9A-blue?style=for-the-badge&logo=vimeo&logoColor=white)](https://player.vimeo.com/video/1173750860)
+
+</div>
+
+---
+
+## Travel Itinerary Core
+
+Travel Itinerary is designed to be a full-stack, end-to-end travel planning experience with three tightly integrated layers:
+
+- **Conversational AI Planner**: Users ask questions in natural language and receive streamed, context-aware travel recommendations. The system uses Retrieval-Augmented Generation (RAG) to ground responses in actual place data.
+- **Local Guide Content**: Contributors can add verified places through a guided form and map picker. New places are stored in PostgreSQL and indexed into Astra for instant retrieval.
+- **Route Optimization Engine**: Selected places are turned into an optimized itinerary using OSRM road distances and a Branch-and-Bound solver, with multiple visualization layers highlighting the route decisions.
 
 ![Travel Itinerary Cover](public/Travel%20Itinerary%20Cover.png)
 
-An Travel planning platform built with Next.js, TypeScript, Tailwind CSS, Prisma, and vector search. It combines streaming AI responses, retrieval-augmented recommendations, and algorithmic route optimization into one workflow.
+---
 
 ## At a Glance
 
