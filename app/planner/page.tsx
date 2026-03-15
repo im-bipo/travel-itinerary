@@ -34,10 +34,10 @@ type StreamPayload =
   | { type: "error"; message: string };
 
 const quickPrompts = [
-  "Start from Butwal and suggest 3 temples",
-  "Best places to visit in Lumbini",
-  "Suggest hotels near Palpa",
-  "Where should I go for trekking in Nepal?",
+  "Suggest the best adventurous places to visit in Nepal",
+  "Plan a 3-day trek route with scenic viewpoints",
+  "Recommend a thrilling adventure route with waterfalls and hikes",
+  "Find the top adventure activities near Kathmandu",
 ];
 
 export default function PlannerPage() {
@@ -73,15 +73,7 @@ export default function PlannerPage() {
   }, [messages]);
 
   const suggestions = useMemo(
-    () =>
-      hasStarted
-        ? [
-            "Find hotels near these places",
-            "What restaurants are close by?",
-            "Suggest a 3-day itinerary",
-            "Show the shortest route between all stops",
-          ]
-        : quickPrompts,
+    () => (hasStarted ? [] : quickPrompts),
     [hasStarted],
   );
 
@@ -255,10 +247,6 @@ export default function PlannerPage() {
                 <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   <Compass className="h-8 w-8" />
                 </div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
-                  <Stars className="h-3.5 w-3.5 text-amber-500" />
-                  Personalized itinerary engine
-                </div>
                 <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900 md:text-4xl">
                   Build a premium travel plan in minutes
                 </h2>
@@ -284,8 +272,8 @@ export default function PlannerPage() {
                     <article
                       className={`w-fit max-w-[88%] rounded-2xl px-4 py-3 text-sm md:text-[15px] ${
                         message.role === "user"
-                          ? "rounded-br-sm bg-primary text-white shadow-[0_16px_30px_-16px_rgba(15,66,114,0.95)]"
-                          : "rounded-bl-sm border border-slate-200 bg-white text-slate-800 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.9)]"
+                          ? "rounded-br-sm bg-primary text-white"
+                          : "rounded-bl-sm border border-slate-200 bg-white text-slate-800 "
                       }`}
                     >
                       {message.role === "assistant" ? (
@@ -317,19 +305,21 @@ export default function PlannerPage() {
           <div
             className={`border-t border-slate-200/80 bg-white/95 px-3 pb-4 pt-3 md:px-6 md:pb-5 md:pt-4 ${hasStarted ? "" : "mt-auto"}`}
           >
-            <div className="mx-auto flex w-full max-w-4xl flex-wrap gap-2 pb-3">
-              {suggestions.map((prompt) => (
-                <button
-                  key={prompt}
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => submitMessage(prompt)}
-                  className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:opacity-50 md:text-sm"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
+            {!hasStarted && (
+              <div className="mx-auto flex w-full max-w-4xl flex-wrap gap-2 pb-3">
+                {suggestions.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    disabled={isLoading}
+                    onClick={() => submitMessage(prompt)}
+                    className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:opacity-50 md:text-sm"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <form
               onSubmit={handleSubmit}
